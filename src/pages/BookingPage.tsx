@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
@@ -5,97 +6,29 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ChevronLeft, Film, Calendar, Clock, MapPin, Users, ChevronsRight, UserPlus } from 'lucide-react';
+import { ChevronLeft, Film, Calendar, Clock, MapPin, Users, ChevronsRight, UserPlus, Download } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Movie, getMovieById } from '@/services/movieService';
-
-// Sample theater data
-const theaters = [
-  {
-    id: 1,
-    name: "Shiva Ganga",
-    location: "Asian Shiva Ganga, Kalyan Nagar Road, Survey No.102, Gaddiannaram Rd, near City Bus Stop, Sahithi Nagar, Dilsukhnagar, Hyderabad, Telangana 500060",
-    capacity: 100,
-    price: 20000,
-    image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-    availableTimes: ["10:00 AM", "2:00 PM", "6:00 PM"]
-  },
-  {
-    id: 2,
-    name: "Konark Asian-Mukta-A2",
-    location: "Dilsukhnagar, Konark Theatre Ln, Dilsukhnagar, Hyderabad, Telangana 500060",
-    capacity: 120,
-    price: 25000,
-    image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-    availableTimes: ["11:00 AM", "3:00 PM", "7:00 PM"]
-  },
-  {
-    id: 3,
-    name: "Sudarshan",
-    location: "RTC X Rd, Chikkadpally, Himayatnagar, Hyderabad, Telangana 500020",
-    capacity: 220,
-    price: 25000,
-    image: "https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-    availableTimes: ["2:00 PM", "9:00 PM"]
-  },
-  {
-    id: 4,
-    name: "AAA Cinemas",
-    location: "Asian Allu Arjun Cinemas, Satyam Theatre Rd, X RoadKumar Basti, Ameerpet, Hyderabad, Telangana 500082",
-    capacity: 320,
-    price: 45000,
-    image: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-    availableTimes: ["10:00 AM", "2:00 PM", "9:00 PM"]
-  },
-  {
-    id: 5,
-    name: "IMax",
-    location: "IMAX Road, NTR Marg, behind of, Khairtabad, Hyderabad, Telangana 500063",
-    capacity: 300,
-    price: 35000,
-    image: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-    availableTimes: ["2:00 PM", "6:00 PM", "9:00 PM"]
-  }
-];
-
-// Interfaces
-interface Theater {
-  id: number;
-  name: string;
-  location: string;
-  capacity: number;
-  price: number;
-  image: string;
-  availableTimes: string[];
-}
-
-interface BookingDetails {
-  theater?: Theater;
-  movie?: Movie;
-  date?: string;
-  time?: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  attendees?: number;
-  paymentMethod?: string;
-}
+import TicketActions from '@/components/TicketActions';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Theater, BookingDetails, contentTypes, theaters, createBooking, getTheaterById } from '@/services/bookingService';
 
 const BookingPage: React.FC = () => {
   const { theaterId } = useParams<{ theaterId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [currentStep, setCurrentStep] = useState<'time' | 'movie' | 'details' | 'payment' | 'confirmation'>('time');
+  const [currentStep, setCurrentStep] = useState<'time' | 'screeningType' | 'movie' | 'privateContent' | 'details' | 'payment' | 'confirmation'>('time');
   const [theater, setTheater] = useState<Theater | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [bookingDetails, setBookingDetails] = useState<BookingDetails>({});
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [attendees, setAttendees] = useState<number>(1);
+  const [screeningType, setScreeningType] = useState<'regular' | 'private'>('regular');
   
   // Get dates for the next 7 days
   const dates = Array.from({ length: 7 }, (_, i) => {
@@ -113,7 +46,7 @@ const BookingPage: React.FC = () => {
     
     // Find the selected theater
     if (theaterId) {
-      const foundTheater = theaters.find(t => t.id === parseInt(theaterId, 10));
+      const foundTheater = getTheaterById(parseInt(theaterId, 10));
       if (foundTheater) {
         setTheater(foundTheater);
         setBookingDetails(prev => ({ ...prev, theater: foundTheater }));
@@ -130,7 +63,7 @@ const BookingPage: React.FC = () => {
     
     // Set default date to today
     setSelectedDate(dates[0]);
-  }, [theaterId, navigate, toast]);
+  }, [theaterId, navigate, toast, dates]);
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
@@ -139,8 +72,23 @@ const BookingPage: React.FC = () => {
       time,
       date: selectedDate
     }));
-    // Direct to movie selection after time selection
-    setCurrentStep('movie');
+    // Direct to screening type selection after time selection
+    setCurrentStep('screeningType');
+  };
+
+  const handleScreeningTypeSelect = (type: 'regular' | 'private') => {
+    setScreeningType(type);
+    setBookingDetails(prev => ({ 
+      ...prev, 
+      screeningType: type
+    }));
+    
+    // Navigate to the next step based on the screening type
+    if (type === 'regular') {
+      setCurrentStep('movie');
+    } else {
+      setCurrentStep('privateContent');
+    }
   };
 
   const handleMovieSelect = (movie: Movie) => {
@@ -149,6 +97,22 @@ const BookingPage: React.FC = () => {
       ...prev, 
       movie
     }));
+    setCurrentStep('details');
+  };
+
+  const handlePrivateContentSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    // Update booking details with private content data
+    setBookingDetails(prev => ({
+      ...prev,
+      contentType: formData.get('contentType') as string,
+      contentTitle: formData.get('contentTitle') as string,
+      contentDescription: formData.get('contentDescription') as string,
+      contentDuration: formData.get('contentDuration') as string
+    }));
+    
     setCurrentStep('details');
   };
 
@@ -173,6 +137,9 @@ const BookingPage: React.FC = () => {
     
     // Simulate payment processing
     setTimeout(() => {
+      // Create booking in service
+      const confirmedBooking = createBooking(bookingDetails);
+      
       toast({
         title: "Payment Successful",
         description: "Your booking has been confirmed!",
@@ -224,7 +191,7 @@ const BookingPage: React.FC = () => {
         </Button>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Theater & Movie Info */}
+          {/* Left Column - Theater & Movie/Content Info */}
           <div className="lg:col-span-1">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
@@ -268,8 +235,8 @@ const BookingPage: React.FC = () => {
                 </CardContent>
               </Card>
               
-              {/* Selected Movie Info - Only show when a movie is selected */}
-              {selectedMovie && (
+              {/* Selected Movie Info - Only show when a movie is selected and it's a regular screening */}
+              {selectedMovie && bookingDetails.screeningType === 'regular' && (
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -303,6 +270,42 @@ const BookingPage: React.FC = () => {
                         <div className="flex items-center">
                           <span className="text-sm font-semibold text-gray-700 mr-2">Industry:</span>
                           <span className="text-sm text-gray-600 capitalize">{selectedMovie.industry}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+              
+              {/* Private Content Info - Only show when private screening is selected and content details are provided */}
+              {bookingDetails.screeningType === 'private' && bookingDetails.contentTitle && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="mt-6"
+                >
+                  <Card>
+                    <CardHeader className="bg-cinema-navy text-white rounded-t-lg">
+                      <CardTitle className="flex items-center">
+                        <Film className="mr-2 h-5 w-5" />
+                        Your Content
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="text-lg font-bold">{bookingDetails.contentTitle}</h3>
+                          <p className="text-sm text-gray-500 capitalize">{bookingDetails.contentType}</p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm text-gray-700">{bookingDetails.contentDescription}</p>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                          <span className="text-sm text-gray-700">Duration: {bookingDetails.contentDuration}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -371,8 +374,69 @@ const BookingPage: React.FC = () => {
                 </Card>
               </motion.div>
             )}
+
+            {/* Screening Type Selection - New step */}
+            {currentStep === 'screeningType' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card>
+                  <CardHeader className="border-b">
+                    <CardTitle className="text-2xl text-cinema-primary">Select Screening Type</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="mb-4">
+                      <p className="text-gray-600">Choose between a regular movie screening or showcase your own content.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                      <Card 
+                        className={`border-2 cursor-pointer transition-all ${screeningType === 'regular' ? 'border-cinema-primary bg-cinema-primary/10' : 'border-gray-200 hover:border-cinema-primary/50'}`}
+                        onClick={() => handleScreeningTypeSelect('regular')}
+                      >
+                        <CardContent className="p-6 flex flex-col items-center text-center">
+                          <Film className="h-12 w-12 mb-4 text-cinema-primary" />
+                          <h3 className="text-lg font-bold mb-2">Regular Screening</h3>
+                          <p className="text-sm text-gray-600">
+                            Watch a movie from our curated selection of classics
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card 
+                        className={`border-2 cursor-pointer transition-all ${screeningType === 'private' ? 'border-cinema-navy bg-cinema-navy/10' : 'border-gray-200 hover:border-cinema-navy/50'}`}
+                        onClick={() => handleScreeningTypeSelect('private')}
+                      >
+                        <CardContent className="p-6 flex flex-col items-center text-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4 text-cinema-navy" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                          </svg>
+                          <h3 className="text-lg font-bold mb-2">Private Showcase</h3>
+                          <p className="text-sm text-gray-600">
+                            Screen your own documentary, short film, or other content
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="mt-6">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setCurrentStep('time')}
+                        className="text-cinema-primary"
+                      >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Back to Time Selection
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
             
-            {/* Movie Selection Step - New */}
+            {/* Movie Selection Step */}
             {currentStep === 'movie' && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -423,9 +487,9 @@ const BookingPage: React.FC = () => {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {/* Sample Bollywood movies */}
                           {[
-                            { id: 5, title: "3 Idiots", year: 2009, genre: "Comedy, Drama", industry: "bollywood", poster: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" },
-                            { id: 6, title: "Lagaan", year: 2001, genre: "Drama, Sport", industry: "bollywood", poster: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1925&q=80" },
-                            { id: 7, title: "Sholay", year: 1975, genre: "Action, Adventure", industry: "bollywood", poster: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" },
+                            { id: 4, title: "Dilwale Dulhania Le Jayenge", year: 1995, genre: "Romance", industry: "bollywood", poster: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" },
+                            { id: 5, title: "Sholay", year: 1975, genre: "Action", industry: "bollywood", poster: "https://images.unsplash.com/photo-1626126525134-fbbc70c322b4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" },
+                            { id: 6, title: "Lagaan", year: 2001, genre: "Drama, Sport", industry: "bollywood", poster: "https://images.unsplash.com/photo-1594908900066-3f47337549d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" },
                           ].map((movie) => (
                             <Card key={movie.id} className="cursor-pointer hover:scale-105 transition-transform overflow-hidden" onClick={() => handleMovieSelect(movie as Movie)}>
                               <div className="relative h-40">
@@ -445,9 +509,9 @@ const BookingPage: React.FC = () => {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {/* Sample Tollywood movies */}
                           {[
-                            { id: 9, title: "Baahubali: The Beginning", year: 2015, genre: "Action, Drama", industry: "tollywood", poster: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" },
-                            { id: 10, title: "Arjun Reddy", year: 2017, genre: "Drama, Romance", industry: "tollywood", poster: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" },
-                            { id: 11, title: "RRR", year: 2022, genre: "Action, Drama", industry: "tollywood", poster: "https://images.unsplash.com/photo-1485846234645-a62644f84728?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" },
+                            { id: 7, title: "Bahubali: The Beginning", year: 2015, genre: "Action, Fantasy", industry: "tollywood", poster: "https://images.unsplash.com/photo-1594909122133-a8f480ac4a37?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" },
+                            { id: 8, title: "RRR", year: 2022, genre: "Action, Drama", industry: "tollywood", poster: "https://images.unsplash.com/photo-1626814026049-5786409df8dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" },
+                            { id: 9, title: "Arjun Reddy", year: 2017, genre: "Romance, Drama", industry: "tollywood", poster: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1925&q=80" },
                           ].map((movie) => (
                             <Card key={movie.id} className="cursor-pointer hover:scale-105 transition-transform overflow-hidden" onClick={() => handleMovieSelect(movie as Movie)}>
                               <div className="relative h-40">
@@ -466,11 +530,11 @@ const BookingPage: React.FC = () => {
                     <div className="mt-6">
                       <Button 
                         variant="outline" 
-                        onClick={() => setCurrentStep('time')}
+                        onClick={() => setCurrentStep('screeningType')}
                         className="text-cinema-primary"
                       >
                         <ChevronLeft className="mr-2 h-4 w-4" />
-                        Back to Time Selection
+                        Back to Screening Type
                       </Button>
                     </div>
                   </CardContent>
@@ -478,7 +542,94 @@ const BookingPage: React.FC = () => {
               </motion.div>
             )}
             
-            {/* Details Step */}
+            {/* Private Content Form Step */}
+            {currentStep === 'privateContent' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card>
+                  <CardHeader className="border-b">
+                    <CardTitle className="text-2xl text-cinema-primary">Tell Us About Your Content</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <form onSubmit={handlePrivateContentSubmit}>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          <div>
+                            <Label htmlFor="contentType">Content Type</Label>
+                            <select 
+                              id="contentType" 
+                              name="contentType" 
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              required
+                            >
+                              <option value="">Select content type</option>
+                              {contentTypes.map((type) => (
+                                <option key={type.id} value={type.id}>{type.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="contentTitle">Title</Label>
+                            <Input 
+                              type="text" 
+                              id="contentTitle" 
+                              name="contentTitle" 
+                              placeholder="Enter the title of your content"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="contentDuration">Duration</Label>
+                            <Input 
+                              type="text" 
+                              id="contentDuration" 
+                              name="contentDuration" 
+                              placeholder="e.g., 1 hour 30 minutes"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="contentDescription">Description</Label>
+                            <textarea 
+                              id="contentDescription" 
+                              name="contentDescription" 
+                              rows={4}
+                              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              placeholder="Briefly describe your content"
+                              required
+                            ></textarea>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between mt-6">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => setCurrentStep('screeningType')}
+                          >
+                            <ChevronLeft className="mr-2 h-4 w-4" />
+                            Back
+                          </Button>
+                          
+                          <Button type="submit" className="bg-cinema-navy hover:bg-cinema-navy/90">
+                            Continue
+                            <ChevronsRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+            
+            {/* Personal Details Step */}
             {currentStep === 'details' && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -487,82 +638,75 @@ const BookingPage: React.FC = () => {
               >
                 <Card>
                   <CardHeader className="border-b">
-                    <CardTitle className="text-2xl text-cinema-primary">Enter Your Details</CardTitle>
+                    <CardTitle className="text-2xl text-cinema-primary">Personal Details</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <form onSubmit={handleDetailsSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input id="name" name="name" required placeholder="Enter your full name" />
+                    <form onSubmit={handleDetailsSubmit}>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="name">Full Name</Label>
+                            <Input 
+                              type="text" 
+                              id="name" 
+                              name="name" 
+                              placeholder="Enter your name"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input 
+                              type="email" 
+                              id="email" 
+                              name="email" 
+                              placeholder="Enter your email"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <Input 
+                              type="tel" 
+                              id="phone" 
+                              name="phone" 
+                              placeholder="Enter your phone number"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="attendees">Number of Attendees</Label>
+                            <Input 
+                              type="number" 
+                              id="attendees" 
+                              name="attendees" 
+                              min="1"
+                              max={theater.capacity} 
+                              value={attendees}
+                              onChange={(e) => setAttendees(parseInt(e.target.value, 10))}
+                              required
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Phone Number</Label>
-                          <Input id="phone" name="phone" required placeholder="Enter your phone number" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" name="email" type="email" required placeholder="Enter your email address" />
-                      </div>
-                      
-                      {/* Added attendees count field */}
-                      <div className="space-y-2">
-                        <Label htmlFor="attendees" className="flex items-center gap-2">
-                          <UserPlus className="h-4 w-4" />
-                          Number of Attendees
-                        </Label>
-                        <div className="flex items-center space-x-2">
+                        
+                        <div className="flex justify-between mt-6">
                           <Button 
                             type="button" 
                             variant="outline" 
-                            size="icon"
-                            onClick={() => setAttendees(prev => Math.max(1, prev - 1))}
-                            className="h-8 w-8"
+                            onClick={() => setCurrentStep(bookingDetails.screeningType === 'regular' ? 'movie' : 'privateContent')}
                           >
-                            -
+                            <ChevronLeft className="mr-2 h-4 w-4" />
+                            Back
                           </Button>
-                          <Input 
-                            id="attendees" 
-                            name="attendees" 
-                            type="number" 
-                            min="1" 
-                            max={theater.capacity}
-                            value={attendees}
-                            onChange={(e) => setAttendees(parseInt(e.target.value, 10) || 1)}
-                            className="w-20 text-center" 
-                          />
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="icon"
-                            onClick={() => setAttendees(prev => Math.min(theater.capacity, prev + 1))}
-                            className="h-8 w-8"
-                          >
-                            +
+                          
+                          <Button type="submit" className="bg-cinema-primary hover:bg-cinema-primary/90">
+                            Continue to Payment
+                            <ChevronsRight className="ml-2 h-4 w-4" />
                           </Button>
-                          <span className="text-sm text-muted-foreground">
-                            (Max capacity: {theater.capacity})
-                          </span>
                         </div>
-                      </div>
-                      
-                      <div className="pt-4">
-                        <Button type="submit" className="w-full bg-cinema-primary text-white hover:bg-opacity-90">
-                          Continue to Payment
-                          <ChevronsRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      <div className="text-center">
-                        <Button 
-                          variant="link" 
-                          onClick={() => setCurrentStep('movie')}
-                          className="text-cinema-primary"
-                        >
-                          <ChevronLeft className="mr-2 h-4 w-4" />
-                          Back to Movie Selection
-                        </Button>
                       </div>
                     </form>
                   </CardContent>
@@ -579,59 +723,74 @@ const BookingPage: React.FC = () => {
               >
                 <Card>
                   <CardHeader className="border-b">
-                    <CardTitle className="text-2xl text-cinema-primary">Select Payment Method</CardTitle>
+                    <CardTitle className="text-2xl text-cinema-primary">Payment</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      {['card', 'phonepe', 'paytm', 'gpay'].map(method => (
-                        <Button
-                          key={method}
-                          variant="outline"
-                          className="h-auto py-6 flex flex-col items-center justify-center gap-2 hover:bg-cinema-primary hover:text-white transition-all"
-                          onClick={() => handlePaymentMethodSelect(method)}
-                        >
-                          {getPaymentIcon(method)}
-                          <span className="capitalize">{method === 'gpay' ? 'Google Pay' : method === 'card' ? 'Credit/Debit Card' : method}</span>
-                        </Button>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-8 border-t pt-6">
-                      <h3 className="text-lg font-bold mb-4">Booking Summary</h3>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>Theater</span>
-                          <span>{theater.name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Movie</span>
-                          <span>{selectedMovie?.title || "Not specified"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Date & Time</span>
-                          <span>{new Date(selectedDate).toLocaleDateString('en-US', { dateStyle: 'long' })} at {selectedTime}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Number of Attendees</span>
-                          <span>{bookingDetails.attendees || 1}</span>
-                        </div>
-                        <div className="border-t border-dashed pt-2 mt-2">
-                          <div className="flex justify-between font-bold">
-                            <span>Total Amount</span>
-                            <span className="text-cinema-primary">₹{theater.price.toLocaleString()}</span>
+                    <div className="mb-6">
+                      <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                        <h3 className="font-bold text-lg mb-2">Booking Summary</h3>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Theater:</span>
+                            <span className="font-medium">{theater.name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Date & Time:</span>
+                            <span className="font-medium">{bookingDetails.date} at {bookingDetails.time}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Type:</span>
+                            <span className="font-medium capitalize">{bookingDetails.screeningType} Screening</span>
+                          </div>
+                          {bookingDetails.screeningType === 'regular' && bookingDetails.movie && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Movie:</span>
+                              <span className="font-medium">{bookingDetails.movie.title}</span>
+                            </div>
+                          )}
+                          {bookingDetails.screeningType === 'private' && bookingDetails.contentTitle && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Content:</span>
+                              <span className="font-medium">{bookingDetails.contentTitle}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Attendees:</span>
+                            <span className="font-medium">{bookingDetails.attendees}</span>
+                          </div>
+                          <div className="border-t pt-2 mt-2 flex justify-between">
+                            <span className="font-bold">Total Amount:</span>
+                            <span className="font-bold">₹{theater.price.toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
+                      
+                      <h3 className="font-bold text-lg mb-4">Select Payment Method</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {['card', 'phonepe', 'paytm', 'gpay'].map((method) => (
+                          <Card 
+                            key={method}
+                            className={`border-2 cursor-pointer transition-all ${bookingDetails.paymentMethod === method ? 'border-green-600 bg-green-50' : 'border-gray-200 hover:border-green-300'}`}
+                            onClick={() => handlePaymentMethodSelect(method)}
+                          >
+                            <CardContent className="flex items-center justify-center p-4">
+                              <div className="flex items-center space-x-2">
+                                {getPaymentIcon(method)}
+                                <span className="font-medium capitalize">{method === 'gpay' ? 'Google Pay' : method === 'phonepe' ? 'PhonePe' : method === 'paytm' ? 'Paytm' : 'Credit/Debit Card'}</span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
                     
-                    <div className="mt-6 text-center">
+                    <div className="flex justify-between mt-6">
                       <Button 
-                        variant="link" 
+                        variant="outline" 
                         onClick={() => setCurrentStep('details')}
-                        className="text-cinema-primary"
                       >
                         <ChevronLeft className="mr-2 h-4 w-4" />
-                        Back to Details
+                        Back
                       </Button>
                     </div>
                   </CardContent>
@@ -646,90 +805,86 @@ const BookingPage: React.FC = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
               >
-                <Card className="border-2 border-green-500">
-                  <div className="bg-green-500 p-4 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <CardContent className="pt-6 text-center">
-                    <h2 className="text-2xl font-bold mb-4 text-green-700">Booking Confirmed!</h2>
-                    <p className="mb-6 text-gray-600">Your theater booking has been confirmed. A confirmation email has been sent to {bookingDetails.email}.</p>
-                    
-                    <div className="bg-gray-50 p-4 rounded-md mb-6">
-                      <h3 className="font-bold text-left mb-3">Booking Details:</h3>
-                      <div className="text-left space-y-2">
+                <Card className="border-green-200">
+                  <CardHeader className="border-b bg-green-50 text-center">
+                    <div className="mx-auto h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <CardTitle className="text-2xl text-green-700">Booking Confirmed!</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="bg-gray-50 rounded-lg p-4 booking-confirmation-text">
+                      <h3 className="font-bold text-lg mb-3 text-center">Booking Details</h3>
+                      <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="font-medium">Booking ID:</span>
-                          <span>{Math.random().toString(36).substring(2, 10).toUpperCase()}</span>
+                          <span className="text-gray-600">Theater:</span>
+                          <span className="font-medium">{theater.name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="font-medium">Theater:</span>
-                          <span>{theater.name}</span>
+                          <span className="text-gray-600">Date & Time:</span>
+                          <span className="font-medium">{bookingDetails.date} at {bookingDetails.time}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="font-medium">Movie:</span>
-                          <span>{selectedMovie?.title || "Not specified"}</span>
+                          <span className="text-gray-600">Type:</span>
+                          <span className="font-medium capitalize">{bookingDetails.screeningType} Screening</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium">Date & Time:</span>
-                          <span>{new Date(selectedDate).toLocaleDateString('en-US', { dateStyle: 'long' })} at {selectedTime}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium">Attendees:</span>
-                          <span>{bookingDetails.attendees || 1}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="font-medium">Name:</span>
-                          <span>{bookingDetails.name}</span>
-                        </div>
-                        <div className="border-t border-dashed pt-2 mt-2">
-                          <div className="flex justify-between font-bold">
-                            <span>Amount Paid:</span>
-                            <span className="text-green-700">₹{theater.price.toLocaleString()}</span>
+                        
+                        {bookingDetails.screeningType === 'regular' && bookingDetails.movie && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Movie:</span>
+                            <span className="font-medium">{bookingDetails.movie.title}</span>
                           </div>
+                        )}
+                        
+                        {bookingDetails.screeningType === 'private' && bookingDetails.contentTitle && (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Content:</span>
+                              <span className="font-medium">{bookingDetails.contentTitle}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Content Type:</span>
+                              <span className="font-medium capitalize">{bookingDetails.contentType}</span>
+                            </div>
+                          </>
+                        )}
+                        
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Attendees:</span>
+                          <span className="font-medium">{bookingDetails.attendees}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Name:</span>
+                          <span className="font-medium">{bookingDetails.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="font-medium">{bookingDetails.email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Phone:</span>
+                          <span className="font-medium">{bookingDetails.phone}</span>
+                        </div>
+                        <div className="border-t pt-2 mt-2 flex justify-between">
+                          <span className="font-bold">Total Amount Paid:</span>
+                          <span className="font-bold">₹{theater.price.toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="mt-8">
+                      <TicketActions bookingDetails={bookingDetails} />
+                    </div>
+                    
+                    <div className="flex justify-center mt-8">
                       <Button 
-                        onClick={() => navigate('/')}
                         variant="outline" 
-                        className="flex-1"
+                        onClick={() => navigate('/')}
+                        className="bg-cinema-navy text-white hover:bg-cinema-navy/90"
                       >
-                        Back to Home
-                      </Button>
-                      <Button 
-                        className="flex-1 bg-cinema-primary hover:bg-opacity-90 text-white"
-                        onClick={() => {
-                          // Logic to download the ticket
-                          const ticketContent = `
-REEL REVIVAL - BOOKING CONFIRMATION
----------------------------------
-Booking ID: ${Math.random().toString(36).substring(2, 10).toUpperCase()}
-Theater: ${theater.name}
-Movie: ${selectedMovie?.title || "Not specified"}
-Date: ${new Date(selectedDate).toLocaleDateString('en-US', { dateStyle: 'long' })}
-Time: ${selectedTime}
-Attendees: ${bookingDetails.attendees || 1}
-Name: ${bookingDetails.name}
-Amount Paid: ₹${theater.price.toLocaleString()}
-                          `;
-                          
-                          const element = document.createElement('a');
-                          const file = new Blob([ticketContent], {type: 'text/plain'});
-                          element.href = URL.createObjectURL(file);
-                          element.download = "reel_revival_ticket.txt";
-                          document.body.appendChild(element);
-                          element.click();
-                          document.body.removeChild(element);
-                        }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
-                        </svg>
-                        Download Ticket
+                        Return to Home
                       </Button>
                     </div>
                   </CardContent>
@@ -738,65 +893,6 @@ Amount Paid: ₹${theater.price.toLocaleString()}
             )}
           </div>
         </div>
-        
-        {/* Additional Information */}
-        {currentStep !== 'confirmation' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-12"
-          >
-            <h2 className="text-2xl font-bold mb-6 text-center text-cinema-primary">About Reel Revival</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-cinema-navy rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                      <Film className="text-cinema-gold h-6 w-6" />
-                    </div>
-                    <h3 className="font-bold mb-2">Preserve Cinematic Heritage</h3>
-                    <p className="text-sm text-gray-600">
-                      We keep theaters alive during non-peak periods while giving classic films another chance to shine on the big screen.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-cinema-navy rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="text-cinema-gold h-6 w-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="font-bold mb-2">Private Experience</h3>
-                    <p className="text-sm text-gray-600">
-                      Enjoy films with just your chosen group in a private theater, creating an intimate and special viewing experience.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-cinema-navy rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="text-cinema-gold h-6 w-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-                      </svg>
-                    </div>
-                    <h3 className="font-bold mb-2">Easy Booking Process</h3>
-                    <p className="text-sm text-gray-600">
-                      Our streamlined booking system makes it simple to select theaters, movies, and times with just a few clicks.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </motion.div>
-        )}
       </motion.div>
     </Layout>
   );
