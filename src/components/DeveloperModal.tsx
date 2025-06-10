@@ -20,7 +20,7 @@ export interface DeveloperModalProps {
 
 export function DeveloperModal({ open, onOpenChange }: DeveloperModalProps) {
   const developerLinks = [
-    { icon: <Github className="h-4 w-4" />, label: "GitHub", url: "https://github.com/GTK-THANGELLA-17" },
+    { icon: <Github className="h-4 w-4" />, label: "GitHub", url: "https://github.com" },
     { icon: <Linkedin className="h-4 w-4 text-blue-600" />, label: "LinkedIn", url: "https://www.linkedin.com/in/gthangella/" },
     { icon: <Twitter className="h-4 w-4 text-blue-400" />, label: "Twitter", url: "https://twitter.com/g_thangella" },
     { icon: <Mail className="h-4 w-4 text-red-500" />, label: "Email", url: "mailto:imgtk17@gmail.com" },
